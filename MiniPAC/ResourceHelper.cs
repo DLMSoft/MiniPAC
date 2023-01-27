@@ -3,7 +3,7 @@ using System.IO;
 
 namespace DLMSoft.MiniPAC {
     static class ResourceHelper {
-        const string RES_NAME_PAC = "DLMSoft.MiniPAC.pac.js";
+        const string RES_NAME_PAC = "DLMSoft.MiniPAC.pac.dat";
 
         public static void UnpackPACFile()
         {
