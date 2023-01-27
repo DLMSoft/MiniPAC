@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net;
 
 namespace DLMSoft.MiniPAC.HttpService {
@@ -23,7 +24,17 @@ namespace DLMSoft.MiniPAC.HttpService {
             Request = context.Request;
             Response = context.Response;
 
-            HandleRequest();
+            try {
+                HandleRequest();
+            }
+            catch (Exception ex) {
+                Debug.WriteLine(ex);
+                LogSystem.DumpError(ex);
+
+                Response.StatusCode = 500;
+                Response.WriteText("500 Internal Server Error");
+                Response.Close();
+            }
         }
 
         public abstract void HandleRequest();

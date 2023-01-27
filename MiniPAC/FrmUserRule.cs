@@ -13,6 +13,7 @@ namespace DLMSoft.MiniPAC {
 
         void BindData()
         {
+            Config.Load();
             foreach (var i in Config.UserRules) {
                 lstRules.Items.Add(i);
             }
@@ -20,8 +21,6 @@ namespace DLMSoft.MiniPAC {
 
         protected override void OnLoad(EventArgs e)
         {
-            base.OnLoad(e);
-
             BindData();
         }
 

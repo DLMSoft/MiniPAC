@@ -7,7 +7,8 @@ using System.Threading;
 namespace DLMSoft.MiniPAC.HttpService {
     enum HttpServerStatus {
         Stopped,
-        Running
+        Running,
+        Stopping
     }
 
     class HttpServer {
@@ -33,19 +34,28 @@ namespace DLMSoft.MiniPAC.HttpService {
         void ContextThread_Main(object obj)
         {
             var context = obj as HttpListenerContext;
-            var path = context.Request.Url.LocalPath;
-            var method = context.Request.HttpMethod;
-            var key = $"{method} {path}";
-            if (!handlerTypes_.ContainsKey(key)) {
-                context.Response.StatusCode = 404;
-                context.Response.WriteText("404 Not Found");
+            try {
+                var path = context.Request.Url.LocalPath;
+                var method = context.Request.HttpMethod;
+                var key = $"{method} {path}";
+                if (!handlerTypes_.ContainsKey(key)) {
+                    context.Response.StatusCode = 404;
+                    context.Response.WriteText("404 Not Found");
+                    context.Response.Close();
+                    return;
+                }
+                var handlerType = handlerTypes_[key];
+                var handler = Activator.CreateInstance(handlerType) as HttpRequestHandler;
+                handler.Handle(context);
                 context.Response.Close();
-                return;
             }
-            var handlerType = handlerTypes_[key];
-            var handler = Activator.CreateInstance(handlerType) as HttpRequestHandler;
-            handler.Handle(context);
-            context.Response.Close();
+            catch (Exception ex) {
+                context.Response.StatusCode = 500;
+                context.Response.WriteText("500 Internal Server Error");
+                context.Response.Close();
+                Debug.WriteLine(ex);
+                LogSystem.DumpError(ex);
+            }
         }
 
         void HandleContext(HttpListenerContext context)
@@ -56,20 +66,27 @@ namespace DLMSoft.MiniPAC.HttpService {
 
         void ListenThread_Main()
         {
-            listener_.Start();
+            try {
+                listener_.Start();
 
-            while (listener_.IsListening) {
-                try {
-                    var context = listener_.GetContext();
-                    if (context == null) continue;
-                    HandleContext(context);
-                }
-                catch (Exception ex) {
-                    if (ex is HttpListenerException) {
-                        break;
+                while (listener_.IsListening) {
+                    try {
+                        var context = listener_.GetContext();
+                        if (context == null) continue;
+                        HandleContext(context);
                     }
-                    Debug.WriteLine(ex);
+                    catch (Exception ex) {
+                        if (ex is HttpListenerException && Status == HttpServerStatus.Stopping) {
+                            break;
+                        }
+                        Debug.WriteLine(ex);
+                        LogSystem.DumpError(ex);
+                    }
                 }
+            }
+            catch (Exception ex) {
+                Debug.WriteLine(ex);
+                LogSystem.DumpError(ex);
             }
         }
 
@@ -84,6 +101,7 @@ namespace DLMSoft.MiniPAC.HttpService {
 
         public void Stop()
         {
+            Status = HttpServerStatus.Stopping;
             listener_.Abort();
             listenThread_.Join();
             Status = HttpServerStatus.Stopped;

@@ -12,22 +12,28 @@ namespace DLMSoft.MiniPAC {
         {
             InitializeComponent();
 
-            if (Config.AutoStart) {
-                InstallAutoStart();
-            }
-            else {
-                UninstallAutoStart();
-            }
+            try {
+                if (Config.AutoStart) {
+                    InstallAutoStart();
+                }
+                else {
+                    UninstallAutoStart();
+                }
 
-            Program.UpdateSystemPAC();
-            mnuUpdateProxy.Checked = Config.SetProxy;
+                Program.UpdateSystemPAC();
+                mnuUpdateProxy.Checked = Config.SetProxy;
 
-            mnuCopyUrl.Click += HandleCopyUrlClick;
-            mnuAutoStart.Click += HandleAutoStartClick;
-            mnuUpdateProxy.Click += HandleUpdateProxyClick;
-            mnuSettings.Click += HandleSettingsClick;
-            mnuUserRules.Click += HandleUserRulesClick;
-            mnuExit.Click += HandleExitClick;
+                mnuCopyUrl.Click += HandleCopyUrlClick;
+                mnuAutoStart.Click += HandleAutoStartClick;
+                mnuUpdateProxy.Click += HandleUpdateProxyClick;
+                mnuSettings.Click += HandleSettingsClick;
+                mnuUserRules.Click += HandleUserRulesClick;
+                mnuExit.Click += HandleExitClick;
+            }
+            catch (Exception ex) {
+                Debug.WriteLine(ex);
+                LogSystem.DumpError(ex);
+            }
         }
 
         #endregion
@@ -97,15 +103,14 @@ namespace DLMSoft.MiniPAC {
                 MessageBoxIcon.Question
             );
             if (confirmResult != DialogResult.Yes) return;
-            Application.Exit();
+            Program.Exit();
         }
         #endregion
 
         #region Method : InstallAutoStart
         void InstallAutoStart()
         {
-            var key = Registry.CurrentUser.OpenSubKey(Program.REG_KEY_AUTOSTART_ITEM, false);
-            if (key.GetValue(Program.REG_KEY_AUTOSTART_VALUE) != null) {
+            if (TaskSchedulerManager.IsTaskExists()) {
                 mnuAutoStart.Checked = true;
                 return;
             }
@@ -134,8 +139,7 @@ namespace DLMSoft.MiniPAC {
         #region Method : UninstallAutoStart
         void UninstallAutoStart()
         {
-            var key = Registry.CurrentUser.OpenSubKey(Program.REG_KEY_AUTOSTART_ITEM, false);
-            if (key.GetValue(Program.REG_KEY_AUTOSTART_VALUE) == null) {
+            if (!TaskSchedulerManager.IsTaskExists()) {
                 mnuAutoStart.Checked = false;
                 return;
             }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -11,24 +12,30 @@ namespace DLMSoft.MiniPAC.HttpService {
 
         public static void WriteText(this HttpListenerResponse response, string text, Encoding encoding = null)
         {
-            if (response == null) throw new NullReferenceException();
-            if (string.IsNullOrEmpty(text)) return;
-            if (encoding == null) {
-                encoding = Encoding.UTF8;
-            }
+            try {
+                if (response == null) throw new NullReferenceException();
+                if (string.IsNullOrEmpty(text)) return;
+                if (encoding == null) {
+                    encoding = Encoding.UTF8;
+                }
 
-            var textBytes = encoding.GetBytes(text);
+                var textBytes = encoding.GetBytes(text);
 
-            using (var output = response.OutputStream) {
-                var buffer = new byte[BUFFER_SIZE];
+                using (var output = response.OutputStream) {
+                    var buffer = new byte[BUFFER_SIZE];
 
-                using (var ms = new MemoryStream(textBytes)) {
-                    while (true) {
-                        var len = ms.Read(buffer, 0, BUFFER_SIZE);
-                        if (len == 0) break;
-                        output.Write(buffer, 0, len);
+                    using (var ms = new MemoryStream(textBytes)) {
+                        while (true) {
+                            var len = ms.Read(buffer, 0, BUFFER_SIZE);
+                            if (len == 0) break;
+                            output.Write(buffer, 0, len);
+                        }
                     }
                 }
+            }
+            catch (Exception ex) {
+                Debug.WriteLine(ex);
+                LogSystem.DumpError(ex);
             }
         }
     }

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace DLMSoft.MiniPAC.HttpService.Handlers {
     [RequestHandler("GET", "/pac")]
@@ -20,7 +21,9 @@ namespace DLMSoft.MiniPAC.HttpService.Handlers {
 
             var proxyStr = $"{Config.ProxyType} {Config.ProxyHost}:{Config.ProxyPort}";
 
-            using (var reader = File.OpenText("pac")) {
+            var pacPath = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "pac");
+
+            using (var reader = File.OpenText(pacPath)) {
                 var sb = new StringBuilder();
 
                 while (!reader.EndOfStream) {

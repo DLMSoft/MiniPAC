@@ -7,6 +7,7 @@ using Microsoft.Win32;
 
 using DLMSoft.MiniPAC.Configuration;
 using DLMSoft.MiniPAC.HttpService;
+using System.IO;
 
 namespace DLMSoft.MiniPAC {
     static class Program {
@@ -18,8 +19,6 @@ namespace DLMSoft.MiniPAC {
         public const string START_ARG_SET_PROXY = "--set";
         public const string START_ARG_UNSET_PROXY = "--unset";
 
-        public const string REG_KEY_AUTOSTART_ITEM = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
-        public const string REG_KEY_AUTOSTART_VALUE = "MiniPAC";
         public const string REG_KEY_SET_PROXY_ITEM = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings";
         public const string REG_KEY_SET_PROXY_VALUE = "AutoConfigURL";
         #endregion
@@ -43,16 +42,14 @@ namespace DLMSoft.MiniPAC {
         #region Method : InstallAutoStart
         static void InstallAutoStart()
         {
-            var key = Registry.CurrentUser.OpenSubKey(REG_KEY_AUTOSTART_ITEM, true);
-            key.SetValue(REG_KEY_AUTOSTART_VALUE, Application.ExecutablePath);
+            TaskSchedulerManager.CreateTask();
         }
         #endregion
 
         #region Method : UninstallAutoStart
         static void UninstallAutoStart()
         {
-            var key = Registry.CurrentUser.OpenSubKey(REG_KEY_AUTOSTART_ITEM, true);
-            key.DeleteValue(REG_KEY_AUTOSTART_VALUE);
+            TaskSchedulerManager.DeleteTask();
         }
         #endregion
 
@@ -91,6 +88,24 @@ namespace DLMSoft.MiniPAC {
             catch {
                 throw;
             }
+        }
+        #endregion
+
+        #region Method : DoMainLoop
+        static void DoMainLoop()
+        {
+            running_ = true;
+
+            while (running_) {
+                Application.DoEvents();
+            }
+        }
+        #endregion
+
+        #region Method : Exit
+        public static void Exit()
+        {
+            running_ = false;
         }
         #endregion
 
@@ -135,23 +150,33 @@ namespace DLMSoft.MiniPAC {
 
                 HttpServer.Instance.RegisterHandler<HttpService.Handlers.PACHandler>();
 
-                using (var trayIcon = new TrayIcon()) {
-                    HttpServer.Instance.Start(Config.HttpPort);
+                try {
+                    using (var trayIcon = new TrayIcon()) {
+                        HttpServer.Instance.Start(Config.HttpPort);
 
-                    var proxyKey = Registry.CurrentUser.OpenSubKey(REG_KEY_SET_PROXY_ITEM, true);
-                    if (Config.SetProxy && proxyKey.GetValue(REG_KEY_SET_PROXY_VALUE) == null) {
-                        var randomStr = Utility.GenerateRandomString(16);
-                        var startInfo = new ProcessStartInfo {
-                            Verb = "runas",
-                            FileName = Application.ExecutablePath,
-                            Arguments = $"{START_ARG_SET_PROXY} \"http://localhost:{Config.HttpPort}/pac?{randomStr}\""
-                        };
+                        var proxyKey = Registry.CurrentUser.OpenSubKey(REG_KEY_SET_PROXY_ITEM, true);
+                        if (Config.SetProxy && proxyKey.GetValue(REG_KEY_SET_PROXY_VALUE) == null) {
+                            var randomStr = Utility.GenerateRandomString(16);
+                            var startInfo = new ProcessStartInfo {
+                                Verb = "runas",
+                                FileName = Application.ExecutablePath,
+                                Arguments = $"{START_ARG_SET_PROXY} \"http://localhost:{Config.HttpPort}/pac?{randomStr}\""
+                            };
+                        }
+
+                        DoMainLoop();
+                        HttpServer.Instance.Stop();
                     }
-
-                    Application.Run();
-                    HttpServer.Instance.Stop();
+                }
+                catch (Exception ex) {
+                    Debug.WriteLine(ex);
+                    LogSystem.DumpError(ex);
                 }
             }
         }
+
+        #region Fields
+        static bool running_;
+        #endregion
     }
 }

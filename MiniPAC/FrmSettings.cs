@@ -18,6 +18,8 @@ namespace DLMSoft.MiniPAC {
 
         protected override void OnLoad(EventArgs e)
         {
+            Config.Load();
+
             nudHttpPort.Value = Config.HttpPort;
             sltProxyType.SelectedItem = Config.ProxyType;
             txtProxyHost.Text = Config.ProxyHost;
