@@ -103,7 +103,7 @@ namespace DLMSoft.MiniPAC {
                 MessageBoxIcon.Question
             );
             if (confirmResult != DialogResult.Yes) return;
-            Program.Exit();
+            Application.Exit();
         }
         #endregion
 

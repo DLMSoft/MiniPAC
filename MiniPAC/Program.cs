@@ -91,24 +91,6 @@ namespace DLMSoft.MiniPAC {
         }
         #endregion
 
-        #region Method : DoMainLoop
-        static void DoMainLoop()
-        {
-            running_ = true;
-
-            while (running_) {
-                Application.DoEvents();
-            }
-        }
-        #endregion
-
-        #region Method : Exit
-        public static void Exit()
-        {
-            running_ = false;
-        }
-        #endregion
-
         [STAThread]
         static void Main(string[] args)
         {
@@ -164,7 +146,7 @@ namespace DLMSoft.MiniPAC {
                             };
                         }
 
-                        DoMainLoop();
+                        Application.Run();
                         HttpServer.Instance.Stop();
                     }
                 }
@@ -174,9 +156,5 @@ namespace DLMSoft.MiniPAC {
                 }
             }
         }
-
-        #region Fields
-        static bool running_;
-        #endregion
     }
 }
