@@ -142,7 +142,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="pac.js" />
+    <EmbeddedResource Include="pac.dat" />
     <Content Include="Resources\notify.ico" />
   </ItemGroup>
   <ItemGroup>
